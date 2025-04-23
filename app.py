@@ -50,27 +50,38 @@ if selected_file:
 
     # Format column headers
     df.columns = [str(col).strip().title() for col in df.columns]
+# Clean column headers
+df.columns = [str(col).strip().title() for col in df.columns]
 
-    # Conditional formatting from 'R. Global' onwards
-    if "R. Global" in df.columns:
-        r_index = df.columns.get_loc("R. Global")
-        styled_df = df.style \
-            .format("{:.0f}", subset=df.columns[r_index:]) \
-            .set_properties(**{"font-weight": "bold"}, subset=["Name", "Team"]) \
-            .set_table_styles([
-                {"selector": "th", "props": [("font-weight", "bold")]}
-            ]) \
-            .background_gradient(
-                axis=0,
-                subset=df.columns[r_index:],
-                cmap="RdYlGn",
-                vmin=0,
-                vmax=100
-            )
+# Conditional formatting from 'R. Global' onwards
+if "R. Global" in df.columns:
+    r_index = df.columns.get_loc("R. Global")
+    
+    # Check if Name and Team exist before formatting
+    format_cols = []
+    if "Name" in df.columns:
+        format_cols.append("Name")
+    if "Team" in df.columns:
+        format_cols.append("Team")
 
-        st.subheader(f"Data for: {selected_file} → Position: {position}")
-        st.dataframe(styled_df, use_container_width=True)
+    styled_df = df.style \
+        .format("{:.0f}", subset=df.columns[r_index:]) \
+        .set_table_styles([{"selector": "th", "props": [("font-weight", "bold")]}])
 
-    else:
-        st.subheader(f"Data for: {selected_file} → Position: {position}")
-        st.dataframe(df, use_container_width=True)
+    if format_cols:
+        styled_df = styled_df.set_properties(**{"font-weight": "bold"}, subset=format_cols)
+
+    styled_df = styled_df.background_gradient(
+        axis=0,
+        subset=df.columns[r_index:],
+        cmap="RdYlGn",
+        vmin=0,
+        vmax=100
+    )
+
+    st.subheader(f"Data for: {selected_file} → Position: {position}")
+    st.dataframe(styled_df, use_container_width=True)
+
+else:
+    st.subheader(f"Data for: {selected_file} → Position: {position}")
+    st.dataframe(df, use_container_width=True)
