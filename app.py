@@ -51,19 +51,29 @@ if selected_file:
     # Capitalize headers
     df.columns = [str(col).strip().title() for col in df.columns]
 
-    # Conditional formatting from 'R. Global' to the right
+    # Conditional formatting from 'R. Global' onward (only on numeric columns)
     if "R. Global" in df.columns:
         r_index = df.columns.get_loc("R. Global")
 
-        styled_df = df.style \
-            .format("{:.0f}", subset=df.columns[r_index:]) \
-            .background_gradient(
-                axis=0,
-                subset=df.columns[r_index:],
-                cmap="RdYlGn",
-                vmin=0,
-                vmax=100
-            )
+        # Select only numeric columns from R. Global onward
+        numeric_cols = []
+        for col in df.columns[r_index:]:
+            if pd.api.types.is_numeric_dtype(df[col]):
+                numeric_cols.append(col)
+
+        # Format and apply gradient
+        styled_df = df.style
+
+        if numeric_cols:
+            styled_df = styled_df \
+                .format("{:.0f}", subset=numeric_cols) \
+                .background_gradient(
+                    axis=0,
+                    subset=numeric_cols,
+                    cmap="RdYlGn",
+                    vmin=0,
+                    vmax=100
+                )
 
         st.subheader(f"Data for: {selected_file} → Position: {position}")
         st.dataframe(styled_df, use_container_width=True)
@@ -71,4 +81,3 @@ if selected_file:
     else:
         st.subheader(f"Data for: {selected_file} → Position: {position}")
         st.dataframe(df, use_container_width=True)
-
