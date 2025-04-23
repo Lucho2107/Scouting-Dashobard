@@ -6,27 +6,59 @@ import os
 st.set_page_config(page_title="Soccer Scouting Dashboard", layout="wide")
 st.title("📊 Soccer Scouting Dashboard")
 
-# Step 1: Get all Excel files in the Leagues folder
-leagues_folder = os.path.expanduser("~/Documents/Leagues")
-excel_files = [f for f in os.listdir(leagues_folder) if f.endswith(".xlsx")]
+# Load Excel files from the same directory (works for Streamlit Cloud)
+leagues_folder = "."
+excel_files = [
+    f for f in os.listdir(leagues_folder)
+    if f.endswith(".xlsx") and not f.startswith(("~$", "."))
+]
 
-# Step 2: Let user pick a season/tournament (file)
-selected_file = st.selectbox("Select Season / Tournament", excel_files)
+# Select season/tournament (file)
+selected_file = st.selectbox("Select Season / Tournament", sorted(excel_files))
 
 if selected_file:
     file_path = os.path.join(leagues_folder, selected_file)
 
-    # Step 3: Load the Excel file
+    # Load Excel file and get sheet names
     xls = pd.ExcelFile(file_path)
     sheet_names = xls.sheet_names
 
-    # Step 4: Let user pick position (sheet)
+    # Select position (sheet)
     position = st.selectbox("Select Position (Sheet)", sheet_names)
 
-    # Step 5: Load data, skipping first 5 rows and using 6th as header
+    # Load sheet, skipping first 5 rows and using 6th as header
     df = pd.read_excel(xls, sheet_name=position, header=5)
 
-    # Display the data
-    st.subheader(f"📋 Data for: {selected_file} → Position: {position}")
-    st.dataframe(df, use_container_width=True)
+    # Columns to hide per position
+    columns_to_drop = {
+        "GK": ["Unnamed: 0", df.columns[15] if len(df.columns) > 15 else None],  # A, P
+        "CB": ["Unnamed: 0", "AC", "AL", "BC"],
+        "FB": ["Unnamed: 0", "AC", "AL", "BC"],
+        "CM": ["Unnamed: 0", "AC", "AL", "BC"],
+        "W":  ["Unnamed: 0", "AC", "AL", "BC"],
+        "CF": ["Unnamed: 0", "AC", "AL", "BC"],
+        "DM": ["Unnamed: 0", "AB", "AK", "BB"]
+    }
 
+    # Drop those columns if they exist
+    drop_cols = columns_to_drop.get(position, [])
+    drop_cols = [col for col in drop_cols if col in df.columns]
+    df = df.drop(columns=drop_cols)
+
+    # Style numerical columns from 'R. Global' to the right
+    if "R. Global" in df.columns:
+        r_index = df.columns.get_loc("R. Global")
+        styled_df = df.style \
+            .format("{:.0f}", subset=df.columns[r_index:]) \
+            .background_gradient(
+                axis=0,
+                subset=df.columns[r_index:],
+                cmap="RdYlGn",
+                vmin=0,
+                vmax=100
+            )
+        st.subheader(f"📋 Data for: {selected_file} → Position: {position}")
+        st.dataframe(styled_df, use_container_width=True)
+    else:
+        st.subheader(f"📋 Data for: {selected_file} → Position: {position}")
+        st.dataframe(df, use_container_width=True)
