@@ -46,9 +46,17 @@ if selected_file:
     df = df.drop(columns=drop_cols)
 
     # Clean column names and enforce uniqueness
-    df.columns = pd.io.parsers.ParserBase({'names': df.columns})._maybe_dedup_names(
-        [str(col).strip().title() for col in df.columns]
-    )
+    clean_cols = [str(col).strip().title() for col in df.columns]
+seen = {}
+deduped_cols = []
+for col in clean_cols:
+    if col not in seen:
+        seen[col] = 1
+        deduped_cols.append(col)
+    else:
+        seen[col] += 1
+        deduped_cols.append(f"{col}.{seen[col]}")
+df.columns = deduped_cols
 
     # Attempt conditional formatting
     if "R. Global" in df.columns:
