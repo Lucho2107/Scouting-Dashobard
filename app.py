@@ -71,8 +71,8 @@ if selected_file:
                 if pd.api.types.is_numeric_dtype(df[col])
             ]
 
-            # Round values in the dataframe itself
-            df[numeric_cols] = df[numeric_cols].round(0)
+            # Fully convert to int to remove decimals
+            df[numeric_cols] = df[numeric_cols].fillna(0).astype(int)
 
             if numeric_cols:
                 styled_df = df.style \
@@ -97,4 +97,3 @@ if selected_file:
     else:
         st.subheader(f"Data for: {selected_file} → Position: {position}")
         st.dataframe(df, use_container_width=True)
-
