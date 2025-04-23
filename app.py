@@ -48,40 +48,27 @@ if selected_file:
     drop_cols = [col for col in drop_cols if col in df.columns]
     df = df.drop(columns=drop_cols)
 
-    # Format column headers
+    # Capitalize headers
     df.columns = [str(col).strip().title() for col in df.columns]
-# Clean column headers
-df.columns = [str(col).strip().title() for col in df.columns]
 
-# Conditional formatting from 'R. Global' onwards
-if "R. Global" in df.columns:
-    r_index = df.columns.get_loc("R. Global")
-    
-    # Check if Name and Team exist before formatting
-    format_cols = []
-    if "Name" in df.columns:
-        format_cols.append("Name")
-    if "Team" in df.columns:
-        format_cols.append("Team")
+    # Conditional formatting from 'R. Global' to the right
+    if "R. Global" in df.columns:
+        r_index = df.columns.get_loc("R. Global")
 
-    styled_df = df.style \
-        .format("{:.0f}", subset=df.columns[r_index:]) \
-        .set_table_styles([{"selector": "th", "props": [("font-weight", "bold")]}])
+        styled_df = df.style \
+            .format("{:.0f}", subset=df.columns[r_index:]) \
+            .background_gradient(
+                axis=0,
+                subset=df.columns[r_index:],
+                cmap="RdYlGn",
+                vmin=0,
+                vmax=100
+            )
 
-    if format_cols:
-        styled_df = styled_df.set_properties(**{"font-weight": "bold"}, subset=format_cols)
+        st.subheader(f"Data for: {selected_file} → Position: {position}")
+        st.dataframe(styled_df, use_container_width=True)
 
-    styled_df = styled_df.background_gradient(
-        axis=0,
-        subset=df.columns[r_index:],
-        cmap="RdYlGn",
-        vmin=0,
-        vmax=100
-    )
+    else:
+        st.subheader(f"Data for: {selected_file} → Position: {position}")
+        st.dataframe(df, use_container_width=True)
 
-    st.subheader(f"Data for: {selected_file} → Position: {position}")
-    st.dataframe(styled_df, use_container_width=True)
-
-else:
-    st.subheader(f"Data for: {selected_file} → Position: {position}")
-    st.dataframe(df, use_container_width=True)
