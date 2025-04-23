@@ -58,6 +58,10 @@ if selected_file:
             deduped_cols.append(f"{col}.{seen[col]}")
     df.columns = deduped_cols
 
+    # Optionally round the 'Age' column
+    if "Age" in df.columns:
+        df["Age"] = df["Age"].round(0)
+
     # Safe conditional formatting from 'R. Global' onward
     if "R. Global" in df.columns:
         try:
@@ -66,6 +70,9 @@ if selected_file:
                 col for col in df.columns[r_index:]
                 if pd.api.types.is_numeric_dtype(df[col])
             ]
+
+            # Round values in the dataframe itself
+            df[numeric_cols] = df[numeric_cols].round(0)
 
             if numeric_cols:
                 styled_df = df.style \
@@ -90,3 +97,4 @@ if selected_file:
     else:
         st.subheader(f"Data for: {selected_file} → Position: {position}")
         st.dataframe(df, use_container_width=True)
+
