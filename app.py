@@ -1,12 +1,20 @@
+
 import streamlit as st
 import pandas as pd
 import os
+from PIL import Image
 
 # Page settings
-st.set_page_config(page_title="Soccer Scouting Dashboard", layout="wide")
-st.title("📊 Soccer Scouting Dashboard")
+st.set_page_config(page_title="FC Naples Scouting Dashboard", layout="wide")
 
-# Load Excel files from the same directory (works for Streamlit Cloud)
+# Load and display FC Naples logo
+logo = Image.open("FC_Naples_Logo.png")
+st.image(logo, width=120)
+
+# Title
+st.title("FC Naples Scouting Dashboard")
+
+# Load Excel files from current directory (for Streamlit Cloud)
 leagues_folder = "."
 excel_files = [
     f for f in os.listdir(leagues_folder)
@@ -40,12 +48,12 @@ if selected_file:
         "DM": ["Unnamed: 0", "AB", "AK", "BB"]
     }
 
-    # Drop those columns if they exist
+    # Drop columns safely
     drop_cols = columns_to_drop.get(position, [])
     drop_cols = [col for col in drop_cols if col in df.columns]
     df = df.drop(columns=drop_cols)
 
-    # Style numerical columns from 'R. Global' to the right
+    # Style and display table
     if "R. Global" in df.columns:
         r_index = df.columns.get_loc("R. Global")
         styled_df = df.style \
@@ -57,8 +65,8 @@ if selected_file:
                 vmin=0,
                 vmax=100
             )
-        st.subheader(f"📋 Data for: {selected_file} → Position: {position}")
+        st.subheader(f"Data for: {selected_file} → Position: {position}")
         st.dataframe(styled_df, use_container_width=True)
     else:
-        st.subheader(f"📋 Data for: {selected_file} → Position: {position}")
+        st.subheader(f"Data for: {selected_file} → Position: {position}")
         st.dataframe(df, use_container_width=True)
