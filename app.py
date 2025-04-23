@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 import os
 from PIL import Image
+from st_aggrid import AgGrid, GridOptionsBuilder
 
 # Page settings
 st.set_page_config(page_title="FC Naples Scouting Dashboard", layout="wide")
@@ -13,6 +14,18 @@ st.image(logo, width=120)
 
 # Title
 st.title("FC Naples Scouting Dashboard")
+
+# Custom CSS for bold headers
+st.markdown(
+    """
+    <style>
+    .bold-header .ag-header-cell-label {
+        font-weight: bold !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # Load Excel files from current directory (for Streamlit Cloud)
 leagues_folder = "."
@@ -53,20 +66,28 @@ if selected_file:
     drop_cols = [col for col in drop_cols if col in df.columns]
     df = df.drop(columns=drop_cols)
 
-    # Style and display table
-    if "R. Global" in df.columns:
-        r_index = df.columns.get_loc("R. Global")
-        styled_df = df.style \
-            .format("{:.0f}", subset=df.columns[r_index:]) \
-            .background_gradient(
-                axis=0,
-                subset=df.columns[r_index:],
-                cmap="RdYlGn",
-                vmin=0,
-                vmax=100
-            )
-        st.subheader(f"Data for: {selected_file} → Position: {position}")
-        st.dataframe(styled_df, use_container_width=True)
-    else:
-        st.subheader(f"Data for: {selected_file} → Position: {position}")
-        st.dataframe(df, use_container_width=True)
+    # Capitalize and clean column headers
+    df.columns = [str(col).strip().title() for col in df.columns]
+
+    # Configure AG Grid with frozen columns and bold headers
+    gb = GridOptionsBuilder.from_dataframe(df)
+
+    for col in ["Name", "Team"]:
+        if col in df.columns:
+            gb.configure_column(col, pinned='left')
+
+    gb.configure_grid_options(headerHeight=40)
+    gb.configure_default_column(headerClass='bold-header')
+
+    grid_options = gb.build()
+
+    # Show the table
+    st.subheader(f"Data for: {selected_file} → Position: {position}")
+    AgGrid(
+        df,
+        gridOptions=grid_options,
+        allow_unsafe_jscode=True,
+        height=600,
+        fit_columns_on_grid_load=True,
+        enable_enterprise_modules=False
+    )
