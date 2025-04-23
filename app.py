@@ -51,32 +51,41 @@ if selected_file:
     # Capitalize headers
     df.columns = [str(col).strip().title() for col in df.columns]
 
-    # Conditional formatting from 'R. Global' onward (only on numeric columns)
+    # Safe conditional formatting from 'R. Global' onward
     if "R. Global" in df.columns:
-        r_index = df.columns.get_loc("R. Global")
+        try:
+            r_index = df.columns.get_loc("R. Global")
 
-        # Select only numeric columns from R. Global onward
-        numeric_cols = []
-        for col in df.columns[r_index:]:
-            if pd.api.types.is_numeric_dtype(df[col]):
-                numeric_cols.append(col)
+            # Filter only numeric and valid columns
+            numeric_cols = []
+            for col in df.columns[r_index:]:
+                if (
+                    isinstance(col, str)
+                    and col.strip() != ""
+                    and pd.api.types.is_numeric_dtype(df[col])
+                ):
+                    numeric_cols.append(col)
 
-        # Format and apply gradient
-        styled_df = df.style
+            # If we found any numeric columns, apply formatting
+            if numeric_cols:
+                styled_df = df.style \
+                    .format("{:.0f}", subset=numeric_cols) \
+                    .background_gradient(
+                        axis=0,
+                        subset=numeric_cols,
+                        cmap="RdYlGn",
+                        vmin=0,
+                        vmax=100
+                    )
+                st.subheader(f"Data for: {selected_file} → Position: {position}")
+                st.dataframe(styled_df, use_container_width=True)
+            else:
+                st.subheader(f"Data for: {selected_file} → Position: {position}")
+                st.dataframe(df, use_container_width=True)
 
-        if numeric_cols:
-            styled_df = styled_df \
-                .format("{:.0f}", subset=numeric_cols) \
-                .background_gradient(
-                    axis=0,
-                    subset=numeric_cols,
-                    cmap="RdYlGn",
-                    vmin=0,
-                    vmax=100
-                )
-
-        st.subheader(f"Data for: {selected_file} → Position: {position}")
-        st.dataframe(styled_df, use_container_width=True)
+        except Exception as e:
+            st.warning(f"Could not format some columns due to unexpected data: {e}")
+            st.dataframe(df, use_container_width=True)
 
     else:
         st.subheader(f"Data for: {selected_file} → Position: {position}")
