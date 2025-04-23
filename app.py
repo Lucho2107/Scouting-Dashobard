@@ -45,20 +45,20 @@ if selected_file:
     drop_cols = [col for col in drop_cols if col in df.columns]
     df = df.drop(columns=drop_cols)
 
-    # Clean column names and enforce uniqueness
+    # Clean and deduplicate column names
     clean_cols = [str(col).strip().title() for col in df.columns]
-seen = {}
-deduped_cols = []
-for col in clean_cols:
-    if col not in seen:
-        seen[col] = 1
-        deduped_cols.append(col)
-    else:
-        seen[col] += 1
-        deduped_cols.append(f"{col}.{seen[col]}")
-df.columns = deduped_cols
+    seen = {}
+    deduped_cols = []
+    for col in clean_cols:
+        if col not in seen:
+            seen[col] = 1
+            deduped_cols.append(col)
+        else:
+            seen[col] += 1
+            deduped_cols.append(f"{col}.{seen[col]}")
+    df.columns = deduped_cols
 
-    # Attempt conditional formatting
+    # Safe conditional formatting from 'R. Global' onward
     if "R. Global" in df.columns:
         try:
             r_index = df.columns.get_loc("R. Global")
